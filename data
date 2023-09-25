@@ -1,0 +1,85 @@
+CREATE OR REPLACE FUNCTION insert_policy_schedule()
+RETURNS TRIGGER AS $$
+DECLARE
+    schedule_date DATE;
+BEGIN
+    IF NEW.iplc_status = 'approved' AND NEW.iplc_count > 0 THEN
+        -- Calculate the schedule_date increment based on (12 / iplc_count) months
+        schedule_date := NEW.iplc_applicable_date;
+        
+        FOR i IN 1..NEW.iplc_count LOOP
+            INSERT INTO ish_InsurancePolicySchedule (iplc_id, iplc_sindex, iplc_date, iplc_premium, iplc_paid_date)
+            VALUES (NEW.iplc_id, i, schedule_date, NEW.iplc_yrly_prem_amount / NEW.iplc_count, NULL);
+            
+            -- Increment the schedule_date by (12 / iplc_count) months
+            schedule_date := schedule_date + INTERVAL '1 month' * (12 / NEW.iplc_count);
+        END LOOP;
+    END IF;
+    
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER policy_status_approval_trigger
+AFTER UPDATE ON ish_InsurancePolicies
+FOR EACH ROW
+EXECUTE FUNCTION insert_policy_schedule();
+
+drop table ish_InsurancePolicySchedule;
+UPDATE ish_InsurancePolicies SET iplc_status = 'approved' WHERE iplc_id =3 ;
+CREATE TABLE ish_InsurancePolicySchedule (
+    iplc_id int,
+    iplc_sindex SMALLINT,
+    iplc_date DATE,
+    iplc_premium NUMERIC,
+    iplc_paid_date DATE
+);
+
+DROP TRIGGER IF EXISTS policy_status_approval_trigger ON ish_InsurancePolicies;
+
+select * from ish_InsurancePolicySchedule;
+SELECT * FROM ish_InsurancePolicies;
+SELECT CURRENT_DATE;
+INSERT INTO ish_InsurancePolicySchedule (iplc_id, iplc_sindex, iplc_date, iplc_premium, iplc_paid_date)
+VALUES
+    (9, 1, '2023-06-25', 100.00, NULL),
+    (9, 2, '2023-07-26', 100.00, NULL),
+    (9, 3, '2023-08-27', 100.00, NULL),
+    (9, 4, '2023-09-28', 100.00, NULL),
+    (9, 5, '2023-10-29', 100.00, NULL);
+update ish_InsurancePolicySchedule set  iplc_paid_date='2023-06-25' where iplc_id=9 and iplc_sindex=1;
+
+select count(*) from ish_InsurancePolicySchedule where CURRENT_DATE>=iplc_date and iplc_paid_date is null and iplc_id=9;
+
+
+-- Insert sample values into the ish_InsurancePolicies table
+INSERT INTO ish_InsurancePolicies (
+    iplc_cust_id,
+    iplc_cdate,
+    iplc_sum_assured,
+    iplc_applicable_date,
+    iplc_insp_id,
+    iplc_yrly_prem_amount,
+    iplc_expdate,
+    iplc_agnt_id,
+    iplc_count
+)
+VALUES
+    (1, '2023-09-25', 50000.00, '2023-10-01', 5, 2500.00, '2024-09-25', 1, 12),
+    (2, '2023-09-26', 75000.00, '2023-10-01', 6, 3500.00, '2024-09-26', 2, 6),
+    (3, '2023-09-27', 100000.00, '2023-10-01', 7, 4500.00, '2024-09-27', 3, 3);
+-- Insert sample values into the ish_insurancepackages table
+INSERT INTO ish_insurancepackages (
+    insp_id,
+    insp_title,
+    insp_desc,
+    insp_status,
+    insp_range_start,
+    insp_range_end,
+    insp_agelimit_start,
+    insp_agelimit_end
+)
+VALUES
+    (5, 'Standard', 'Standard insurance package', 'AC', 10000.00, 50000.00, 18, 60),
+    (6, 'Premium', 'Premium insurance package', 'AC', 50000.00, 100000.00, 25, 70),
+    (7, 'Platinum', 'Platinum insurance package', 'AC', 100000.00, 200000.00, 30, 75);
