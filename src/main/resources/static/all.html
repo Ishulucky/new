@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+	<meta charset="UTF-8">
+	<title>DataTables Example</title>
+
+	<!-- jQuery library -->
+	<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+	<!-- DataTables CSS -->
+	<link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.10.24/css/jquery.dataTables.min.css">
+
+	<!-- DataTables JS -->
+	<script src="https://cdn.datatables.net/1.10.24/js/jquery.dataTables.min.js"></script>
+
+	<!-- jQuery Form Plugin -->
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery.form/4.3.0/jquery.form.min.js"></script>
+</head>
+
+<body><!-- Form for adding/updating packages -->
+	<form id="packageForm">id:
+		<input type="text" id="id" name="id">
+		<label for="title">Title:</label>
+		<input type="text" id="title" name="title" required>
+		<br>
+		<label for="description">Description:</label>
+		<input type="text" id="description" name="description" required>
+		<br>
+		<label for="status">Status:</label>
+		<input type="text" id="status" name="status" required>
+		<br>
+		<label for="rangeStart">Range Start:</label>
+		<input type="number" id="rangeStart" name="rangeStart" required>
+		<br>
+		<label for="rangeEnd">Range End:</label>
+		<input type="number" id="rangeEnd" name="rangeEnd" required>
+		<br>
+		<label for="ageLimitStart">Age Limit Start:</label>
+		<input type="number" id="ageLimitStart" name="ageLimitStart" required>
+		<br>
+		<label for="ageLimitEnd">Age Limit End:</label>
+		<input type="number" id="ageLimitEnd" name="ageLimitEnd" required>
+		<br>
+		<button type="button" id="postPackage">Create Package</button>
+		<button type="button" id="updatePackage">Update Package</button>
+	</form>
+	<table id="example" class="display" style="width:100%">
+		<thead>
+			<tr>
+				<th>ID</th>
+				<th>Title</th>
+				<th>Description</th>
+				<th>Status</th>
+				<th>Range Start</th>
+				<th>Range End</th>
+				<th>Age Limit Start</th>
+				<th>Age Limit End</th>
+			</tr>
+		</thead>
+		<tbody></tbody>
+	</table>
+	<script>
+		$(document).ready(function () {
+			$.ajax({
+				url: "/insurance/packages",
+				method: "GET", // Use the appropriate HTTP method (GET, POST, etc.) for your controller
+				dataType: "json", // Expect JSON data in the response
+				success: function (data) {
+					// Initialize DataTables once you have received the data
+					$('#example').DataTable({
+						data: data, // Pass the received data to DataTables
+						columns: [
+							{data: "id"},
+							{data: "title"},
+							{data: "description"},
+							{data: "status"},
+							{data: "rangeStart"},
+							{data: "rangeEnd"},
+							{data: "ageLimitStart"},
+							{data: "ageLimitEnd"}
+						]
+					});
+				},
+				error: function (xhr, status, error) {
+					console.error("Error fetching data:", status, error);
+				}
+			});
+		});
+
+		// Create package
+		$('#postPackage').click(function () {
+
+			var packageData = {
+				id: $('#id').val(),
+				title: $('#title').val(),
+				description: $('#description').val(),
+				status: $('#status').val(),
+				rangeStart: $('#rangeStart').val(),
+				rangeEnd: $('#rangeEnd').val(),
+				ageLimitStart: $('#ageLimitStart').val(),
+				ageLimitEnd: $('#ageLimitEnd').val()
+			};
+
+
+			$.ajax({
+				type: "POST",
+				url: "/insurance/addpackage",
+				data: JSON.stringify(packageData),
+				contentType: 'application/json',
+				success: function (response) {
+					alert('Package created successfully!');
+
+				},
+				error: function (error) {
+					alert('Error: ' + error.responseText);
+				}
+			});
+		});
+
+		            // Update package
+            $('#updatePackage').click(function () {
+                var id = $('#id').val(); // Get the package ID
+
+                var packageData = {
+                    id: id,
+                    title: $('#title').val(),
+                    description: $('#description').val(),
+                    status: $('#status').val(),
+                    rangeStart: $('#rangeStart').val(),
+                    rangeEnd: $('#rangeEnd').val(),
+                    ageLimitStart: $('#ageLimitStart').val(),
+                    ageLimitEnd: $('#ageLimitEnd').val()
+                };
+
+                $.ajax({
+                    type: "PUT",
+                    url: "/insurance/updatepack/" + id, // Correctly construct the URL
+                    data: JSON.stringify(packageData),
+                    contentType: 'application/json',
+                    success: function (response) {
+                        alert('Package updated successfully!');
+                        loadData(); // Refresh the DataTable
+                    },
+                    error: function (error) {
+                        alert('Error: ' + error.responseText);
+                        console.log('Error: ' + error.responseText);
+                    }
+                });
+            });
+
+
+
+
+	</script>
+
+	<h2>Update Password</h2>
+	<form id="updatePasswordForm">
+		<label for="userName">userName:</label>
+		<input type="text" id="userName" name="userName" required><br><br>
+
+		<label for="userPwd">New Password:</label>
+		<input type="password" id="userPwd" name="userPwd" required><br><br>
+
+		<input type="submit" value="Update Password">
+	</form>
+
+	<script>
+		$(document).ready(function () {
+			$('#updatePasswordForm').submit(function (e) {
+				e.preventDefault(); // Prevent the default form submission
+
+				// Serialize form data to JSON
+				var formData = JSON.stringify({
+					userName: $('#userName').val(),
+					userPwd: $('#userPwd').val()
+				});
+
+				// Send a PUT request to your server to update the password
+				$.ajax({
+					type: 'PUT',
+					url: '/update', // Replace with your server endpoint
+					contentType: 'application/json',
+					data: formData,
+					success: function (response) {
+						// Handle success, e.g., show a success message
+						alert('Password updated successfully!');
+					},
+					error: function (error) {
+
+						console.log('Error updating password: ' + error.responseText);
+					}
+				});
+			});
+		});
+	</script>
+
+	<h2>Insert Record</h2>
+	<form id="insertRecordForm">
+		<label for="userId">User ID:</label>
+		<input type="number" id="userId" name="userId" required><br><br>
+
+		<label for="userName">User Name:</label>
+		<input type="text" id="userName" name="userName" required><br><br>
+
+		<label for="userCDate">User Creation Date:</label>
+		<input type="date" id="userCDate" name="userCDate" required><br><br>
+
+		<label for="userPwd">User Password:</label>
+		<input type="password" id="userPwd" name="userPwd" required><br><br>
+
+		<label for="userType">User Type:</label>
+		<input type="text" id="userType" name="userType" required><br><br>
+
+		<label for="userStatus">User Status:</label>
+		<input type="text" id="userStatus" name="userStatus" required><br><br>
+
+		<input type="submit" value="Insert Record">
+	</form>
+
+	<script>
+		$(document).ready(function () {
+			$('#insertRecordForm').submit(function (e) {
+				e.preventDefault(); // Prevent the default form submission
+
+				// Serialize form data to JSON
+				var formData = JSON.stringify({
+					userId: $('#userId').val(),
+					userName: $('#userName').val(),
+					userCDate: $('#userCDate').val(),
+					userPwd: $('#userPwd').val(),
+					userType: $('#userType').val(),
+					userStatus: $('#userStatus').val()
+				});
+
+				// Send a POST request to your server to insert the record
+				$.ajax({
+					type: 'POST',
+					url: '/insert', // Replace with your server endpoint
+					contentType: 'application/json',
+					data: formData,
+					success: function (response) {
+						// Handle success, e.g., show a success message
+						alert('Record inserted successfully!');
+					},
+					error: function (error) {
+						// Handle error, e.g., show an error message
+						console.log('Error inserting record: ' + error.responseText);
+					}
+				});
+			});
+		});
+	</script>
+
+	</form>
+</body>
+
+</html>
